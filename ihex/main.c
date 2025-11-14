@@ -24,7 +24,7 @@ int main(void)
 	for (int i = 0; i < buffer.buffer_size; i++)
 	{
 		ihex_tMessage msg = ihex_Put(&my_parser, buffer.data[i]);
-		if (msg != IHEX_CONTINUE)
+		if (msg != IHEX_MESSAGE_CONTINUE)
 			break;
 	}
 	

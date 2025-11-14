@@ -16,21 +16,13 @@
 
 typedef enum
 {
-	IHEX_WAIT_COLON,
-	IHEX_WAIT_BYTE_COUNT,
-	IHEX_WAIT_ADDRESS,
-	IHEX_WAIT_TYPE,
-	IHEX_WAIT_DATA,
-	IHEX_WAIT_CHECK_SUM
+	IHEX_LEXER_STATE_WAIT_COLON,
+	IHEX_LEXER_STATE_WAIT_BYTE_COUNT,
+	IHEX_LEXER_STATE_WAIT_ADDRESS,
+	IHEX_LEXER_STATE_WAIT_TYPE,
+	IHEX_LEXER_STATE_WAIT_DATA,
+	IHEX_LEXER_STATE_WAIT_CHECK_SUM
 }ihex_tLexerState;
-
-typedef enum
-{
-	IHEX_CONTINUE,
-	IHEX_END,
-	IHEX_INVALID_INPUT_DATA,
-	IHEX_CHECK_SUM_ERROR,
-}ihex_tMessage;
 
 typedef enum
 {
@@ -44,13 +36,23 @@ typedef enum
 
 typedef enum
 {
+	IHEX_MESSAGE_CONTINUE,
+	IHEX_MESSAGE_END,
+	IHEX_MESSAGE_INVALID_INPUT_DATA,
+	IHEX_MESSAGE_CHECK_SUM_ERROR,
+}ihex_tMessage;
+
+
+
+typedef enum
+{
 	IHEX_TYPE_00_DATA_RECORD =  0,
 	IHEX_TYPE_01_END_OF_FILE_RECORD = 1,
 	IHEX_TYPE_02_EXTENDED_SEGMENT_ADDRESS_RECORD = 2,
 	IHEX_TYPE_03_START_SEGMENT_ADDRESS_RECORD = 3,
 	IHEX_TYPE_04_EXTENDED_LINEAR_ADDRESS_RECORD = 4,
 	IHEX_TYPE_05_START_LINEAR_ADDRESS_RECORD = 5
-}ihex_tType;
+}ihex_tRecordType;
 
 typedef struct
 {
@@ -67,14 +69,19 @@ typedef struct
 typedef struct
 {
 	uint32_t global_offset;
-}ihex_tRecordDataInterpreter;
+}ihex_tParser;
 
 typedef struct
 {
 	ihex_tLexerState state;
-	uint16_t num_expected_digits;
+	uint16_t num_expected_characters;
 	ihex_tRecordData record_data;
-	ihex_tRecordDataInterpreter record_data_interpreter;
+}ihex_tLexer;
+
+typedef struct
+{
+	ihex_tLexer lexer;
+	ihex_tParser parser;
 }ihex_tReader;
 
 typedef bool (*ihex_tRecordEventFunc)(ihex_tReader* reader, ihex_tLexerTokenType event, uint16_t data);
