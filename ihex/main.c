@@ -13,6 +13,10 @@ typedef struct
 static ihex_tMessage main_tDataHandler(uint32_t address, uint8_t data);
 ihex_tBuffer readIntelHex(const char* filename);
 
+
+
+
+
 int main(void)
 {
 	ihex_tBuffer buffer = readIntelHex("assets/EVA200-A1-X2.hex");
@@ -36,10 +40,29 @@ int main(void)
 
 static ihex_tMessage main_tDataHandler(uint32_t address, uint8_t data)
 {
-	ihex_tMessage message = IHEX_MESSAGE_CONTINUE;
 	printf("0x%08X, 0x%02X\n", address, data);
-	return message;
+	return IHEX_MESSAGE_CONTINUE;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ihex_tBuffer readIntelHex(const char* filename)
 {
