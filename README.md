@@ -18,12 +18,12 @@ It parses Intel HEX records byte-by-byte, validates checksums, supports Extended
 ---
 
 # Table of contents
-- # Usage
-- # API
-- # Example
-- # Build
-- # Tests
-- # Design notes & implementation details
+- ## Usage
+- ## API
+- ## Example
+- ## Build
+- ## Tests
+- ## Design notes & implementation details
 
 ---
 
