@@ -10,15 +10,15 @@ typedef struct
 	uint8_t* data;
 }ihex_tBuffer;
 
-
+static ihex_tMessage main_tDataHandler(uint32_t address, uint8_t data);
 ihex_tBuffer readIntelHex(const char* filename);
 
 int main(void)
 {
-	ihex_tBuffer buffer = readIntelHex("assets/Mp3Player.hex");
+	ihex_tBuffer buffer = readIntelHex("assets/EVA200-A1-X2.hex");
 
 	ihex_tReader my_parser;
-
+	ihex_Init(&my_parser, main_tDataHandler);
 	ihex_Begin(&my_parser);
 
 	for (int i = 0; i < buffer.buffer_size; i++)
@@ -34,16 +34,12 @@ int main(void)
 	return 0;
 }
 
-
-
-
-
-
-
-
-
-
-
+static ihex_tMessage main_tDataHandler(uint32_t address, uint8_t data)
+{
+	ihex_tMessage message = IHEX_MESSAGE_CONTINUE;
+	printf("0x%08X, 0x%02X\n", address, data);
+	return message;
+}
 
 ihex_tBuffer readIntelHex(const char* filename)
 {

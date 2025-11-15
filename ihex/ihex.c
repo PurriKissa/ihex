@@ -27,10 +27,15 @@ static int8_t ihex_CharToValue(uint8_t data);
 // Global Functions
 //****************************************************************************************************************
 
+void ihex_Init(ihex_tReader* reader, ihex_tDataCallback func_data)
+{
+	reader->funcData = func_data;
+}
+
 void ihex_Begin(ihex_tReader* reader)
 {
 	reader->lexer.state = IHEX_LEXER_STATE_WAIT_COLON;
-	memset(&reader->parser, 0, sizeof(ihex_tParser));
+	reader->lexer.ext_offset = 0x00000000;
 }
 
 ihex_tMessage ihex_Put(ihex_tReader* reader, uint8_t data)
@@ -217,33 +222,56 @@ static uint16_t ihex_InsertDigit(uint16_t src_val, uint8_t nibble_data, uint8_t 
 static ihex_tMessage ihex_LexerTokenStream(ihex_tReader* reader, ihex_tLexerTokenType token_type, uint16_t token_data)
 {
 	ihex_tMessage message = IHEX_MESSAGE_CONTINUE;
-
+	
 	switch (token_type)
 	{
 	case IHEX_LEXER_TOKENTYPE_RECORD_MARK:
-		printf("M 0x%02X\n", (uint8_t)token_data);
+		reader->lexer.calc_chksum = 0;
+		reader->lexer.rec_byte_offset = 0x0000;
 		break;
 
 	case IHEX_LEXER_TOKENTYPE_RECLEN:
-		printf("L 0x%02X\n", (uint8_t)token_data);
+		reader->lexer.calc_chksum += token_data;
 		break;
 
 	case IHEX_LEXER_TOKENTYPE_LOAD_OFFSET:
-		printf("O 0x%04X\n", token_data);
+		reader->lexer.calc_chksum += (token_data >> 8) + (token_data & 0xFF);
 		break;
 
 	case IHEX_LEXER_TOKENTYPE_RECTYP:
-		printf("T 0x%02X\n", token_data);
-		if (token_data == IHEX_TYPE_01_END_OF_FILE_RECORD)
-			reader->lexer.record_data.eof_found = true;
+		reader->lexer.calc_chksum += token_data;
+
+		if (reader->lexer.record_data.rectyp == IHEX_TYPE_04_EXTENDED_LINEAR_ADDRESS_RECORD)
+		{
+			reader->lexer.ext_offset = 0x00000000; //Reset to 0 since it will be set to a new value in this record.
+			reader->lexer.ext_offset_byte_pos = 3;
+		}
+
 		break;
 
 	case IHEX_LEXER_TOKENTYPE_DATA:
-		printf("D 0x%02X\n", token_data);
+		reader->lexer.calc_chksum += token_data;
+		if (reader->lexer.record_data.rectyp == IHEX_TYPE_00_DATA_RECORD)
+		{
+			if (reader->funcData != NULL)
+				message = reader->funcData((reader->lexer.ext_offset + reader->lexer.record_data.load_offset) + reader->lexer.rec_byte_offset, token_data);
+		}
+		else if (reader->lexer.record_data.rectyp == IHEX_TYPE_04_EXTENDED_LINEAR_ADDRESS_RECORD)
+		{
+			reader->lexer.ext_offset |= (uint32_t)token_data << (8 * reader->lexer.ext_offset_byte_pos);
+			reader->lexer.ext_offset_byte_pos--;
+		}
+		reader->lexer.rec_byte_offset++;
 		break;
 
 	case IHEX_LEXER_TOKENTYPE_CHKSUM:
-		printf("C 0x%02X EOF: 0x%02X\n", token_data, reader->lexer.record_data.eof_found);
+		reader->lexer.calc_chksum = ~reader->lexer.calc_chksum + 1;
+
+		if (reader->lexer.record_data.rectyp == IHEX_TYPE_01_END_OF_FILE_RECORD)
+			message = IHEX_MESSAGE_END;
+		else if (reader->lexer.calc_chksum != reader->lexer.record_data.target_check_sum)
+			message = IHEX_MESSAGE_CHECK_SUM_ERROR;
+
 		break;
 	}
 
