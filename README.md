@@ -10,6 +10,7 @@ It parses Intel HEX records byte-by-byte, validates checksums, supports Extended
 - Handles Intel HEX record types:
   - `00` — Data Record
   - `01` — End Of File Record
+  - `02` — Extended Segment Address Record (for 20-bit addressing)
   - `04` — Extended Linear Address Record (32-bit addressing)
 - Checksum validation with error reporting
 - Simple, callback-based API — you control how parsed data bytes are handled
