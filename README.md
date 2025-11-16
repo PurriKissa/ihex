@@ -1,6 +1,6 @@
 # Intel HEX Parser (ihex)
 
-A small, streaming Intel HEX lexer/parser in C — minimal, portable, and suitable for embedded systems or host tooling.  
+A small, streaming Intel HEX lexer/parser in C — minimal, portable, and suitable for embedded systems or host tooling.
 It parses Intel HEX records byte-by-byte, validates checksums, supports Extended Linear Address (type 04) records, and dispatches parsed data bytes through a user-provided callback.
 
 ---
@@ -29,6 +29,8 @@ It parses Intel HEX records byte-by-byte, validates checksums, supports Extended
 ---
 
 # Usage
+
+You anly need to copy ihex.c and ihex.h into your project.
 
 1. Include the parser header in your project:
 ```c
