@@ -77,7 +77,6 @@ static ihex_tMessage ihex_Lexer(ihex_tReader* reader, uint8_t data)
 		message = ihex_LexerTokenStream(reader, IHEX_LEXER_TOKENTYPE_RECORD_MARK, reader->lexer.record_data.record_mark);
 
 		ihex_SetNextState(reader, IHEX_LEXER_STATE_WAIT_BYTE_COUNT, NUM_BYTE_COUNT_DIGITS);
-		reader->lexer.state = IHEX_LEXER_STATE_WAIT_BYTE_COUNT;
 		break;
 
 	case IHEX_LEXER_STATE_WAIT_BYTE_COUNT:
@@ -241,9 +240,14 @@ static ihex_tMessage ihex_LexerTokenStream(ihex_tReader* reader, ihex_tLexerToke
 	case IHEX_LEXER_TOKENTYPE_RECTYP:
 		reader->lexer.calc_chksum += token_data;
 
-		if (reader->lexer.record_data.rectyp == IHEX_TYPE_04_EXTENDED_LINEAR_ADDRESS_RECORD)
+		if (reader->lexer.record_data.rectyp == IHEX_TYPE_02_EXTENDED_SEGMENT_ADDRESS_RECORD)
 		{
-			reader->lexer.ext_offset = 0x00000000; //Reset to 0 since it will be set to a new value in this record.
+			reader->lexer.ext_offset = 0x00000000;
+			reader->lexer.ext_offset_byte_pos = 1;
+		}
+		else if (reader->lexer.record_data.rectyp == IHEX_TYPE_04_EXTENDED_LINEAR_ADDRESS_RECORD)
+		{
+			reader->lexer.ext_offset = 0x00000000;
 			reader->lexer.ext_offset_byte_pos = 3;
 		}
 
@@ -255,6 +259,16 @@ static ihex_tMessage ihex_LexerTokenStream(ihex_tReader* reader, ihex_tLexerToke
 		{
 			if (reader->funcData != NULL)
 				message = reader->funcData((reader->lexer.ext_offset + reader->lexer.record_data.load_offset) + reader->lexer.rec_byte_offset, token_data);
+		}
+		else if (reader->lexer.record_data.rectyp == IHEX_TYPE_02_EXTENDED_SEGMENT_ADDRESS_RECORD)
+		{
+			
+			reader->lexer.ext_offset |= (uint32_t)token_data << (8 * reader->lexer.ext_offset_byte_pos);
+			
+			if (reader->lexer.ext_offset_byte_pos == 0)
+				reader->lexer.ext_offset <<= 4;
+			
+			reader->lexer.ext_offset_byte_pos--;
 		}
 		else if (reader->lexer.record_data.rectyp == IHEX_TYPE_04_EXTENDED_LINEAR_ADDRESS_RECORD)
 		{

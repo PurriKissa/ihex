@@ -1,8 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <inttypes.h>
 #include "ihex.h"
 
+
+#define VT_EEPROM_SIZE 0xB7C0
+#define HEX_DUMP_BYTES_PER_LINE 24
 
 typedef struct
 {
@@ -10,19 +14,22 @@ typedef struct
 	uint8_t* data;
 }ihex_tBuffer;
 
-static ihex_tMessage main_tDataHandler(uint32_t address, uint8_t data);
+static ihex_tMessage main_DataHandler(uint32_t address, uint8_t data);
 ihex_tBuffer readIntelHex(const char* filename);
 
-
+static uint8_t vt_eeprom[VT_EEPROM_SIZE];
 
 
 
 int main(void)
 {
-	ihex_tBuffer buffer = readIntelHex("assets/EVA200-A1-X2.hex");
 
+	ihex_tBuffer buffer = readIntelHex("assets/Mp3Player.hex");
 	ihex_tReader my_parser;
-	ihex_Init(&my_parser, main_tDataHandler);
+
+	memset(vt_eeprom, 0, VT_EEPROM_SIZE);
+
+	ihex_Init(&my_parser, main_DataHandler);
 	ihex_Begin(&my_parser);
 
 	for (int i = 0; i < buffer.buffer_size; i++)
@@ -35,12 +42,47 @@ int main(void)
 	if (buffer.data != NULL)
 		free(buffer.data);
 
+
+	int i = 0;
+	int bytes_per_line = HEX_DUMP_BYTES_PER_LINE;
+	char ascii_line[32];
+	ascii_line[HEX_DUMP_BYTES_PER_LINE] = 0;
+
+	while (true)
+	{
+		ascii_line[HEX_DUMP_BYTES_PER_LINE - bytes_per_line] = ((vt_eeprom[i] >= 0x20) && (vt_eeprom[i] <= 0x7F)) ? vt_eeprom[i] : '.';
+		if (bytes_per_line == HEX_DUMP_BYTES_PER_LINE)
+			printf("%04X ", i);
+		
+		bytes_per_line--;
+		
+
+
+		printf(" %02X", vt_eeprom[i]);
+		i++;
+
+
+		
+
+		if (bytes_per_line == 0)
+		{
+			bytes_per_line = HEX_DUMP_BYTES_PER_LINE;
+			printf("  %s\n", ascii_line);
+		}
+
+		if (i >= VT_EEPROM_SIZE)
+			break;
+
+		
+	}
+
+
 	return 0;
 }
 
-static ihex_tMessage main_tDataHandler(uint32_t address, uint8_t data)
+static ihex_tMessage main_DataHandler(uint32_t address, uint8_t data)
 {
-	printf("0x%08X, 0x%02X\n", address, data);
+	vt_eeprom[address] = data;
 	return IHEX_MESSAGE_CONTINUE;
 }
 
